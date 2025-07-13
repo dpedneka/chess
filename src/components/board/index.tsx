@@ -3,7 +3,7 @@ import { Chessboard } from "react-chessboard";
 import GameSession from "../../lib/session";
 import { useInitialEffect } from "../../lib/utils";
 import "./board.scss";
-import { Chess } from "chess.js";
+import { PieceDropHandlerArgs } from "react-chessboard/dist/types";
 
 type Props = {
   game: GameSession;
@@ -12,10 +12,21 @@ type Props = {
 function Board({ game }: Props): JSX.Element {
   const [position, setPosition] = useState<string>(game.getPosition());
   const [fen, setFen] = useState(game.chess.fen());
+  const [evaluation, setEvaluation] = useState<string>("0");
 
-  // const [chessboardSize, setChessboardSize] = useState<number | undefined>(
-  //   undefined
-  // );
+  const getStockfishAnalysis = async (fenString: string) => {
+    try {
+      const encodedFen = encodeURIComponent(fenString);
+      const response = await fetch(
+        `https://stockfish.online/api/s/v2.php?fen=${encodedFen}&depth=15`
+      );
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error getting Stockfish analysis:", error);
+      return null;
+    }
+  };
 
   // Observers
   useInitialEffect(() => {
@@ -25,26 +36,13 @@ function Board({ game }: Props): JSX.Element {
     });
   });
 
-  // Chess resize
-  // useLayoutEffect(() => {
-  //   function handleResize() {
-  //     const display = document.getElementById("container") as HTMLElement;
-  //     setChessboardSize(Math.min(720, display?.offsetWidth - 20));
-  //   }
+  const onDrop = ({
+    piece,
+    sourceSquare,
+    targetSquare,
+  }: PieceDropHandlerArgs): boolean => {
+    if (!targetSquare) return false;
 
-  //   window.addEventListener("resize", handleResize);
-  //   handleResize();
-  //   return () => window.removeEventListener("resize", handleResize);
-  // });
-
-  // Functions
-
-  const onSquareClickHandler = ({ square }: any) => {
-    console.log("Square clicked:", square);
-    // Implement any logic you want when a square is clicked
-  };
-
-  const onDrop = ({ sourceSquare, targetSquare }: any) => {
     try {
       const move = game.move({
         from: sourceSquare,
@@ -58,10 +56,19 @@ function Board({ game }: Props): JSX.Element {
       setPosition(newPosition);
       setFen(newPosition);
 
+      // Get Stockfish analysis after the move
+      getStockfishAnalysis(game.chess.fen())
+        .then((analysis) => {
+          if (analysis) {
+            console.log("Stockfish Analysis:", analysis.evaluation);
+            setEvaluation(analysis.evaluation);
+          }
+        })
+        .catch((error) => console.error("Analysis error:", error));
+
       if (game.isGameOver()) {
         console.log("Game over");
         alert("Game over!"); // Notify the user
-        // Handle game over logic here, e.g., show a message or reset the game
       }
 
       return true;
@@ -71,8 +78,18 @@ function Board({ game }: Props): JSX.Element {
     }
   };
 
+  const onSquareClickHandler = ({ square }: any) => {
+    console.log("Square clicked:", square);
+    // Implement any logic you want when a square is clicked
+  };
+
   return (
     <div className="board" data-testid="board">
+      {evaluation && (
+        <div className="evaluation" style={{ marginBottom: "10px" }}>
+          Position Evaluation: {evaluation}
+        </div>
+      )}
       <Chessboard
         options={{
           animationDurationInMs: 200,
