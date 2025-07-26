@@ -7,6 +7,10 @@ import { PieceDropHandlerArgs } from "react-chessboard/dist/types";
 
 type Props = {
   game: GameSession;
+  isOnline?: boolean;
+  playerColor?: "white" | "black";
+  onMove?: (move: any) => void;
+  disabled?: boolean;
 };
 
 function Board({ game }: Props): JSX.Element {

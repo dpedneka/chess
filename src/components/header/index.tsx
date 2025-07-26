@@ -30,10 +30,12 @@ import SettingsIcon from "@mui/icons-material/Settings";
 type Props = {
   game: GameSession;
   drawerWidth: number;
+  isOnline?: boolean;
+  playerColor?: "white" | "black";
   // onOpen: (open: boolean) => void;
 };
 
-function Header({ game, drawerWidth }: Props) {
+function Header({ game, drawerWidth, isOnline, playerColor }: Props) {
   const [gameOver, setGameOver] = useState<boolean>(game.isGameOver());
   const [time, setTime] = useState<GameSessionTimer>(game.timer);
   const theme = useTheme();
@@ -90,7 +92,7 @@ function Header({ game, drawerWidth }: Props) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            Chess Game
+            Chess Game {isOnline ? `- Playing as ${playerColor}` : ""}
           </Typography>
         </Toolbar>
         <Box sx={{ display: "flex" }}>
