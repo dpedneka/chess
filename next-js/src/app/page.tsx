@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from "react";
-import Board from "./components/board";
-import GameSession from "./lib/session";
-import OnlineGame from "./components/online-game";
-import { io } from "socket.io-client";
-import "./components/board/board.scss";
-import { Box, CssBaseline, useTheme } from "@mui/material";
-import Header from "./components/header";
+"use client";
 
+import Image from "next/image";
+import { io } from "socket.io-client";
+import "@/components/board/board.scss";
+import { Box, CssBaseline, useTheme } from "@mui/material";
+import GameSession from "@/lib/session";
+import { useEffect, useState } from "react";
+import Header from "@/components/header";
+import OnlineGame from "@/components/online-game";
+import Board from "@/components/board";
 const drawerWidth = 240;
 
-function App() {
+export default function Home() {
   const [game, setGame] = useState<GameSession>();
   const [open, setOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
@@ -66,15 +68,13 @@ function App() {
         game={game}
         isOnline={isOnline}
         playerColor={playerColor}
-        // onOpen={onOpenHandler}
       />
-
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          marginTop: "64px",
+          p: 1,
+          marginTop: "20px",
           marginLeft: open ? `${drawerWidth}px` : 0,
           transition: theme.transitions.create("margin", {
             easing: theme.transitions.easing.sharp,
@@ -87,6 +87,7 @@ function App() {
             sx={{
               display: "flex",
               marginBottom: 3,
+              width: "100%",
             }}
           >
             <Box
@@ -128,5 +129,3 @@ function App() {
     <></>
   );
 }
-
-export default App;
