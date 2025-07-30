@@ -6,8 +6,8 @@ export interface GameSessionTimer {
 export interface GameSessionHistory {
   timer: GameSessionTimer;
   position: string;
-  moveNotation?: string;
-  fullMoveNumber?: number;
+  moveNotation: string;
+  fullMoveNumber: number;
 }
 
 export interface GameSessionStorage {

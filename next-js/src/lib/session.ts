@@ -127,6 +127,8 @@ class GameSession {
       {
         timer: { ...initialTimer },
         position: initialPosition,
+        moveNotation: '',
+        fullMoveNumber: 0
       },
     ];
     this.movesHistory = [];
