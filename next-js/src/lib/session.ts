@@ -14,7 +14,7 @@ class GameSession {
   chess: Chess;
   listeners: GameSessionListeners;
   timer: GameSessionTimer;
-  history: GameSessionHistory;
+  history: GameSessionHistory[];
   timeout?: number;
   currentIndex: number;
   isReset?: boolean;
@@ -38,6 +38,8 @@ class GameSession {
           {
             timer: { ...initialTimer },
             position: initialPosition,
+            moveNotation: '',
+            fullMoveNumber: 0
           },
         ];
 
