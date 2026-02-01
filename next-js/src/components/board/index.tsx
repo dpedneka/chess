@@ -1,4 +1,4 @@
-import React, { JSX, useLayoutEffect, useState } from "react";
+import React, { JSX, useLayoutEffect, useState, useEffect } from "react";
 import { Chessboard, PieceDropHandlerArgs } from "react-chessboard";
 import GameSession from "../../lib/session";
 import { useInitialEffect } from "../../lib/utils";
@@ -10,9 +10,12 @@ type Props = {
   playerColor?: "white" | "black";
   onMove?: (move: any) => void;
   disabled?: boolean;
+  themeId?: string;
 };
 
-function Board({ game }: Props): JSX.Element {
+import { getThemeById } from "@/lib/themes";
+
+function Board({ game, isOnline, playerColor, onMove, disabled, themeId }: Props): JSX.Element {
   const [position, setPosition] = useState<string>(game.getPosition());
   const [fen, setFen] = useState(game.chess.fen());
   const [evaluation, setEvaluation] = useState<string>("0");
@@ -36,8 +39,34 @@ function Board({ game }: Props): JSX.Element {
     game.onBoardChange((position) => {
       console.log(game.timer);
       setPosition(position);
+      setFen(game.chess.fen());
     });
   });
+
+  // Request evaluation whenever the position changes (including external updates)
+  useEffect(() => {
+    let mounted = true;
+    const fenString = game.chess.fen();
+    setEvaluation("...");
+    getStockfishAnalysis(fenString)
+      .then((analysis) => {
+        if (!mounted) return;
+        if (analysis && analysis.evaluation !== undefined) {
+          setEvaluation(analysis.evaluation);
+        } else {
+          setEvaluation("0");
+        }
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        console.error("Analysis error:", err);
+        setEvaluation("0");
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [position]);
 
   const onDrop = ({
     piece,
@@ -46,19 +75,32 @@ function Board({ game }: Props): JSX.Element {
   }: PieceDropHandlerArgs): boolean => {
     if (!targetSquare) return false;
 
+    // Check if move is disabled
+    if (disabled) {
+      console.log("Move is disabled - not your turn");
+      return false;
+    }
+
     try {
-      const move = game.move({
+      const move = {
         from: sourceSquare,
         to: targetSquare,
         promotion: "q",
-      });
+      };
+
+      const result = game.move(move);
       debugger;
 
-      if (move === null) return false; // illegal move
+      if (result === null) return false; // illegal move
 
       const newPosition = game.getPosition();
       setPosition(newPosition);
       setFen(newPosition);
+
+      // If online, emit the move to opponent
+      if (isOnline && onMove) {
+        onMove(move);
+      }
 
       // Get Stockfish analysis after the move
       getStockfishAnalysis(game.chess.fen())
@@ -87,6 +129,9 @@ function Board({ game }: Props): JSX.Element {
     // Implement any logic you want when a square is clicked
   };
 
+  const boardOrientation = playerColor || "white";
+  const theme = getThemeById(themeId);
+
   return (
     <div className="board" data-testid="board">
       {evaluation && (
@@ -94,14 +139,28 @@ function Board({ game }: Props): JSX.Element {
           Position Evaluation: {evaluation}
         </div>
       )}
+      {disabled && (
+        <div style={{
+          padding: "10px",
+          backgroundColor: "#ffeb3b",
+          color: "#000",
+          borderRadius: "4px",
+          marginBottom: "10px",
+          textAlign: "center",
+          fontWeight: "bold"
+        }}>
+          Waiting for opponent...
+        </div>
+      )}
       <Chessboard
         options={{
           animationDurationInMs: 200,
-          boardOrientation: "white",
+          boardOrientation: boardOrientation as any,
           position,
-          lightSquareStyle: { backgroundColor: "rgb(217 227 232)" },
-          darkSquareStyle: { backgroundColor: "rgb(149 176 191)" },
+          lightSquareStyle: { backgroundColor: theme.light },
+          darkSquareStyle: { backgroundColor: theme.dark },
           onPieceDrop: onDrop,
+
           onSquareClick: onSquareClickHandler,
           boardStyle: {
             borderRadius: "4px",
